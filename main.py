@@ -313,7 +313,6 @@ class Game:
         self.font = pygame.font.Font('fonts/OpenSans-Regular.ttf', 45)  # Загрузка шрифта
 
         self.pause_icon = pygame.image.load('images/pause_icon.png').convert_alpha()  # Загрузка иконки паузы
-        self.turns_icon = pygame.image.load('images/turns_icon.png').convert_alpha()  # Загрузка иконки счетчика ходов
 
         self.pause_tint = pygame.Surface((self.width, self.height), pygame.SRCALPHA)  # Затемнение экрана
         self.pause_tint.fill((0, 0, 0, 128))
@@ -432,9 +431,8 @@ class Game:
         self.screen.blit(time_text, (time_x, -1))  # Отрисовка счетчика времени
 
         turns_text = self.font.render(f'{self.turns}', True, 'black')
-        turns_x = self.width - turns_text.get_width() - 56
-        self.screen.blit(self.turns_icon, (turns_x, 16))  # Отрисовка иконки счетчика ходов
-        self.screen.blit(turns_text, (turns_x + 40, -1))  # Отрисовка счетчика ходов
+        turns_x = self.width - turns_text.get_width() - 16
+        self.screen.blit(turns_text, (turns_x, -1))  # Отрисовка счетчика ходов
 
         for tile_y, row in enumerate(self.tiles):
             for tile_x, tile in enumerate(row):
