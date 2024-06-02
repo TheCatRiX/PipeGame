@@ -184,9 +184,11 @@ class MainMenu:
         for i, button in enumerate(self.buttons):
             button.draw(self.screen, self.button_x, 128 + 96 * i)  # Отрисовка кнопок
         rows_text = self.font.render(f'{self.rows}', True, 'black')
-        self.screen.blit(rows_text, (self.button_x + 230 - rows_text.get_width() // 2, 232))  # Отрисовка числа строк
+        rows_x = self.button_x + 230 - rows_text.get_width() // 2
+        self.screen.blit(rows_text, (rows_x, 232))  # Отрисовка числа строк
         cols_text = self.font.render(f'{self.cols}', True, 'black')
-        self.screen.blit(cols_text, (self.button_x + 298 - cols_text.get_width() // 2, 232))  # Отрисовка числа столбцов
+        cols_x = self.button_x + 298 - cols_text.get_width() // 2
+        self.screen.blit(cols_text, (cols_x, 232))  # Отрисовка числа столбцов
 
         pygame.display.flip()  # Отображение изменений на экране
 
@@ -300,7 +302,7 @@ class Game:
 
         self.water = []  # Список координат труб с водой
 
-        self.water_images = {  # Загрузка изображений труб с водой
+        self.water_images = {  # Загрузка изображений воды в трубах
             'start': pygame.image.load('images/start_water.png').convert_alpha(),
             'straight': pygame.image.load('images/straight_water.png').convert_alpha(),
             'bend': pygame.image.load('images/bend_water.png').convert_alpha(),
@@ -311,7 +313,6 @@ class Game:
         self.font = pygame.font.Font('fonts/OpenSans-Regular.ttf', 45)  # Загрузка шрифта
 
         self.pause_icon = pygame.image.load('images/pause_icon.png').convert_alpha()  # Загрузка иконки паузы
-        self.time_icon = pygame.image.load('images/time_icon.png').convert_alpha()  # Загрузка иконки счетчика времени
         self.turns_icon = pygame.image.load('images/turns_icon.png').convert_alpha()  # Загрузка иконки счетчика ходов
 
         self.pause_tint = pygame.Surface((self.width, self.height), pygame.SRCALPHA)  # Затемнение экрана
@@ -426,10 +427,9 @@ class Game:
 
         self.screen.blit(self.pause_icon, (16, 16))  # Отрисовка кнопки паузы
 
-        time_text = self.font.render(f'{self.time // 60}', True, 'black')
-        time_x = (self.width - time_text.get_width() - 40) // 2
-        self.screen.blit(self.time_icon, (time_x, 16))  # Отрисовка иконки счетчика времени
-        self.screen.blit(time_text, (time_x + 40, -1))  # Отрисовка счетчика времени
+        time_text = self.font.render(f'{self.time // 3600:02}:{self.time // 60 % 60:02}', True, 'black')
+        time_x = (self.width - time_text.get_width()) // 2
+        self.screen.blit(time_text, (time_x, -1))  # Отрисовка счетчика времени
 
         turns_text = self.font.render(f'{self.turns}', True, 'black')
         turns_x = self.width - turns_text.get_width() - 56
@@ -449,7 +449,7 @@ class Game:
             scaled_water = pygame.transform.scale(pygame.transform.rotate(
                 self.water_images[pipe], self.tiles[tile_y][tile_x].angle), (self.scale, self.scale))
 
-            self.screen.blit(scaled_water, (x, y))  # Отрисовка воды
+            self.screen.blit(scaled_water, (x, y))  # Отрисовка воды в трубе
 
         if self.win:
             # TODO: Меню конца игры
@@ -458,8 +458,9 @@ class Game:
         if self.pause:
             self.screen.blit(self.pause_tint, (0, 0))  # Отрисовка затемнения экрана
             self.screen.blit(self.pause_bg, ((self.width - 384) // 2, 64))  # Отрисовка фона меню паузы
-            pause_text = self.font.render('Пауза', True, 'black')
-            self.screen.blit(pause_text, ((self.width - pause_text.get_width()) // 2, 63))  # Отрисовка текста "Пауза"
+            pause_title_text = self.font.render('Пауза', True, 'black')
+            pause_x = (self.width - pause_title_text.get_width()) // 2
+            self.screen.blit(pause_title_text, (pause_x, 63))  # Отрисовка заголовка меню паузы
             for i, button in enumerate(self.pause_buttons):
                 button.draw(self.screen, self.button_x, 160 + 96 * i)  # Отрисовка кнопок меню паузы
 
