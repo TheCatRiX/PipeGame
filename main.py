@@ -109,7 +109,7 @@ class MainMenu:
             Button('Выйти из игры')
         ]
 
-        self.button_x = (self.width - 320) // 2  # Положение кнопок по оси X
+        self.button_x = (self.width - 320) // 2  # Положение кнопок меню по оси X
 
     def event_handler(self, event):
         """
@@ -277,8 +277,8 @@ class Game:
         self.rows = rows  # Количество строк
         self.cols = cols  # Количество столбцов
 
-        self.pause = False  # Пауза
-        self.win = False  # Победа
+        self.pause = False  # Состояние паузы
+        self.win = False  # Состояние победы
 
         self.scale = 16 * (min(576 // self.rows, 1152 // self.cols) // 16)  # Размер фишки
         self.grid_width, self.grid_height = self.cols * self.scale, self.rows * self.scale  # Размеры игрового поля
@@ -312,22 +312,26 @@ class Game:
 
         self.font = pygame.font.Font('fonts/OpenSans-Regular.ttf', 45)  # Загрузка шрифта
 
-        self.pause_icon = pygame.image.load('images/pause_icon.png').convert_alpha()  # Загрузка иконки паузы
+        self.menu_tint = pygame.Surface((self.width, self.height), pygame.SRCALPHA)  # Затемнение экрана
+        self.menu_tint.fill((0, 0, 0, 128))
+        self.button_x = (self.width - 320) // 2  # Положение кнопок меню по оси X
 
-        self.pause_tint = pygame.Surface((self.width, self.height), pygame.SRCALPHA)  # Затемнение экрана
-        self.pause_tint.fill((0, 0, 0, 128))
-        self.pause_bg = pygame.image.load('images/pause_bg.png').convert_alpha()  # Загрузка фона меню паузы
-        self.pause_buttons = [  # Кнопки меню паузы
+        self.pause_button = pygame.image.load('images/pause_button.png').convert_alpha()  # Загрузка кнопки паузы
+        self.pause_menu_bg = pygame.image.load('images/pause_menu_bg.png').convert_alpha()  # Загрузка фона меню паузы
+        self.pause_menu_buttons = [  # Кнопки меню паузы
             Button('Продолжить'),
             Button('Выйти в меню')
         ]
 
-        self.button_x = (self.width - 320) // 2  # Положение кнопок по оси X
-
-        self.win_image = pygame.image.load('images/victory.png').convert_alpha()  # Загрузка изображения победы
+        self.win_menu_bg = pygame.image.load('images/win_menu_bg.png').convert_alpha()  # Загрузка фона меню победы
+        self.win_menu_buttons = [  # Кнопки меню победы
+            Button('Играть ещё раз'),
+            Button('Выйти в меню')
+        ]
 
         self.time = 0  # Счетчик времени
         self.turns = 0  # Счетчик ходов
+        self.score = 0  # Счет
 
         self.check_win()  # Проверка победной ситуации
 
@@ -352,13 +356,20 @@ class Game:
                     self.turns += 1  # Увеличение счетчика ходов
                     self.check_win()  # Проверка победной ситуации
 
-            elif 0 <= x <= 64 and 0 <= y <= 64 and event.button == 1 and not self.pause:  # Нажатие ЛКМ по кнопке паузы
+            elif (0 <= x <= 64 and 0 <= y <= 64 and event.button == 1  # Нажатие ЛКМ по кнопке паузы
+                  and not self.pause and not self.win):
                 self.pause = True
 
             elif self.pause and self.button_x <= x <= self.button_x + 320 and event.button == 1:
                 if 160 <= y <= 224:  # Нажатие ЛКМ по кнопке "Продолжить"
                     self.pause = False
                 elif 256 <= y <= 320:  # Нажатие ЛКМ по кнопке "Выйти в меню"
+                    self.app.state = MainMenu(self.app, self.screen, self.clock, self.rows, self.cols)
+
+            elif self.win and self.button_x <= x <= self.button_x + 320 and event.button == 1:
+                if 224 <= y <= 288:  # Нажатие ЛКМ по кнопке "Играть ещё раз"
+                    self.app.state = Game(self.app, self.screen, self.clock, self.rows, self.cols)
+                elif 320 <= y <= 384:  # Нажатие ЛКМ по кнопке "Выйти в меню"
                     self.app.state = MainMenu(self.app, self.screen, self.clock, self.rows, self.cols)
 
     def check_win(self):
@@ -383,13 +394,10 @@ class Game:
             y += 1
 
         while 0 <= x <= self.cols - 1 and 0 <= y <= self.rows - 1 and direction is not None and direction != 'win':
-
             direction = self.tiles[y][x].water_direction(direction)  # Определение направления движения воды
 
             if direction is not None:
-
                 pipe = self.tiles[y][x].pipe  # Тип трубы
-
                 if pipe == 'cross' and (self.tiles[y][x].angle == 0 and (direction in ['down', 'left']) or
                                         self.tiles[y][x].angle == 90 and (direction in ['down', 'right']) or
                                         self.tiles[y][x].angle == 180 and (direction in ['up', 'right']) or
@@ -408,6 +416,9 @@ class Game:
                     y += 1
                 elif direction == 'end':  # Вода достигла конечной фишки
                     self.win = True
+                    time = self.time // 60 if self.time > 60 else 1
+                    turns = self.turns if self.turns > 0 else 1
+                    self.score = (self.rows ** 2 * self.cols ** 2 * 100) // (time * turns)
 
     def loop(self):
         """
@@ -424,7 +435,7 @@ class Game:
         """
         self.screen.fill('white')  # Заливка экрана белым цветом, чтобы избавиться от прошлого кадра
 
-        self.screen.blit(self.pause_icon, (16, 16))  # Отрисовка кнопки паузы
+        self.screen.blit(self.pause_button, (16, 16))  # Отрисовка кнопки паузы
 
         time_text = self.font.render(f'{self.time // 3600:02}:{self.time // 60 % 60:02}', True, 'black')
         time_x = (self.width - time_text.get_width()) // 2
@@ -439,28 +450,34 @@ class Game:
                 x, y = self.grid_x + tile_x * self.scale, self.grid_y + tile_y * self.scale
                 scaled_image = pygame.transform.scale(pygame.transform.rotate(tile.image, tile.angle),
                                                       (self.scale, self.scale))
-
                 self.screen.blit(scaled_image, (x, y))  # Отрисовка фишки
 
         for tile_x, tile_y, pipe in self.water:
             x, y = self.grid_x + tile_x * self.scale, self.grid_y + tile_y * self.scale
             scaled_water = pygame.transform.scale(pygame.transform.rotate(
                 self.water_images[pipe], self.tiles[tile_y][tile_x].angle), (self.scale, self.scale))
-
             self.screen.blit(scaled_water, (x, y))  # Отрисовка воды в трубе
 
-        if self.win:
-            # TODO: Меню конца игры
-            self.screen.blit(self.win_image, (self.width // 2 - 256, 64))  # Отрисовка изображения победы
-
         if self.pause:
-            self.screen.blit(self.pause_tint, (0, 0))  # Отрисовка затемнения экрана
-            self.screen.blit(self.pause_bg, ((self.width - 384) // 2, 64))  # Отрисовка фона меню паузы
+            self.screen.blit(self.menu_tint, (0, 0))  # Отрисовка затемнения экрана
+            self.screen.blit(self.pause_menu_bg, ((self.width - 384) // 2, 64))  # Отрисовка фона меню паузы
             pause_title_text = self.font.render('Пауза', True, 'black')
-            pause_x = (self.width - pause_title_text.get_width()) // 2
-            self.screen.blit(pause_title_text, (pause_x, 63))  # Отрисовка заголовка меню паузы
-            for i, button in enumerate(self.pause_buttons):
+            pause_title_x = (self.width - pause_title_text.get_width()) // 2
+            self.screen.blit(pause_title_text, (pause_title_x, 63))  # Отрисовка заголовка меню паузы
+            for i, button in enumerate(self.pause_menu_buttons):
                 button.draw(self.screen, self.button_x, 160 + 96 * i)  # Отрисовка кнопок меню паузы
+
+        if self.win:
+            self.screen.blit(self.menu_tint, (0, 0))  # Отрисовка затемнения экрана
+            self.screen.blit(self.win_menu_bg, ((self.width - 384) // 2, 64))  # Отрисовка фона меню победы
+            win_title_text = self.font.render('Победа!', True, 'black')
+            win_title_x = (self.width - win_title_text.get_width()) // 2
+            self.screen.blit(win_title_text, (win_title_x, 63))  # Отрисовка заголовка меню победы
+            score_text = self.font.render(f'Cчёт: {self.score}', True, 'black')
+            score_x = (self.width - score_text.get_width()) // 2
+            self.screen.blit(score_text, (score_x, 143))  # Отрисовка счета
+            for i, button in enumerate(self.win_menu_buttons):
+                button.draw(self.screen, self.button_x, 224 + 96 * i)  # Отрисовка кнопок меню победы
 
         pygame.display.flip()  # Отображение изменений на экране
 
