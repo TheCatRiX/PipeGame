@@ -347,7 +347,7 @@ class TextButton(Button):
         """
         if event.key == pygame.K_BACKSPACE:  # Нажатие клавиши Backspace
             self.text = self.text[:-1]  # Удаление последнего символа
-        else:  # Нажатие остальных клавиш клавиатуры
+        elif event.unicode.isalnum() or event.unicode in ' -_.':  # Ввод букв, цифр и некоторых символов
             width = self.font.render(self.text + event.unicode, True, 'black').get_width()
             if width <= 310:  # Ширина текста не превышает ширину текстового поля
                 self.text += event.unicode  # Добавление символа
