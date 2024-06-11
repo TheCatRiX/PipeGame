@@ -122,26 +122,6 @@ class TextButton(Button):
                 self.text += event.unicode
 
 
-def value_increase(value, step, max_value):
-    """
-    Возвращает значение, увеличенное на шаг, с учётом максимального значения
-    """
-    if value + step <= max_value:
-        return value + step
-    else:
-        return max_value
-
-
-def value_decrease(value, step, min_value):
-    """
-    Возвращает значение, уменьшенное на шаг, с учётом минимального значения
-    """
-    if value - step >= min_value:
-        return value - step
-    else:
-        return min_value
-
-
 class MainMenu:
     def __init__(self, application):
         self.app = application
@@ -184,27 +164,27 @@ class MainMenu:
 
                 elif self.menu_button_x + 209 <= x <= self.menu_button_x + 252 and 224 <= y <= 240:
                     if event.button == 1:  # Нажатие ЛКМ по кнопке "▲"
-                        self.app.rows = value_increase(self.app.rows, 1, 18)
+                        self.app.rows = min(self.app.rows + 1, self.app.max_rows)
                     elif event.button == 3:  # Нажатие ПКМ по кнопке "▲"
-                        self.app.rows = value_increase(self.app.rows, 5, 18)
+                        self.app.rows = min(self.app.rows + 5, self.app.max_rows)
 
                 elif self.menu_button_x + 209 <= x <= self.menu_button_x + 252 and 272 <= y <= 288:
                     if event.button == 1:  # Нажатие ЛКМ по кнопке "▼"
-                        self.app.rows = value_decrease(self.app.rows, 1, 9)
+                        self.app.rows = max(self.app.rows - 1, self.app.min_rows)
                     elif event.button == 3:  # Нажатие ПКМ по кнопке "▼"
-                        self.app.rows = value_decrease(self.app.rows, 5, 9)
+                        self.app.rows = max(self.app.rows - 5, self.app.min_rows)
 
                 elif self.menu_button_x + 277 <= x <= self.menu_button_x + 320 and 224 <= y <= 240:
                     if event.button == 1:  # Нажатие ЛКМ по кнопке "▲"
-                        self.app.cols = value_increase(self.app.cols, 1, 36)
+                        self.app.cols = min(self.app.cols + 1, self.app.max_cols)
                     elif event.button == 3:  # Нажатие ПКМ по кнопке "▲"
-                        self.app.cols = value_increase(self.app.cols, 5, 36)
+                        self.app.cols = min(self.app.cols + 5, self.app.max_cols)
 
                 elif self.menu_button_x + 277 <= x <= self.menu_button_x + 320 and 272 <= y <= 288:
                     if event.button == 1:  # Нажатие ЛКМ по кнопке "▼"
-                        self.app.cols = value_decrease(self.app.cols, 1, 9)
+                        self.app.cols = max(self.app.cols - 1, self.app.min_cols)
                     elif event.button == 3:  # Нажатие ПКМ по кнопке "▼"
-                        self.app.cols = value_decrease(self.app.cols, 5, 9)
+                        self.app.cols = max(self.app.cols - 5, self.app.min_cols)
 
                 elif 320 <= y <= 384 and event.button == 1:  # Нажатие ЛКМ по кнопке "Таблица рекордов"
                     self.app.state = Leaderboard(self.app)
@@ -227,17 +207,18 @@ class MainMenu:
             if not self.new_game:  # Обычное состояние главного меню
 
                 if event.key == pygame.K_RETURN:
+                    app.player_name = self.new_game_menu_buttons[0].text.strip()
                     self.new_game = True
 
                 elif event.key == pygame.K_UP:
-                    self.app.rows = value_increase(self.app.rows, 1, 18)
+                    self.app.rows = min(self.app.rows + 1, self.app.max_rows)
                 elif event.key == pygame.K_DOWN:
-                    self.app.rows = value_decrease(self.app.rows, 1, 9)
+                    self.app.rows = max(self.app.rows - 1, self.app.min_rows)
 
                 elif event.key == pygame.K_RIGHT:
-                    self.app.cols = value_increase(self.app.cols, 1, 36)
+                    self.app.cols = min(self.app.cols + 1, self.app.max_cols)
                 elif event.key == pygame.K_LEFT:
-                    self.app.cols = value_decrease(self.app.cols, 1, 9)
+                    self.app.cols = max(self.app.cols - 1, self.app.min_cols)
 
                 elif event.key == pygame.K_TAB:
                     self.app.state = Leaderboard(self.app)
@@ -291,7 +272,7 @@ class MainMenu:
 
             new_game_title_text = self.app.font_45.render('Новая игра', True, 'black')
             new_game_title_x = (self.width - new_game_title_text.get_width()) // 2
-            self.app.screen.blit(new_game_title_text, (new_game_title_x, 63))  # Отрисовка названия меню новой игры
+            self.app.screen.blit(new_game_title_text, (new_game_title_x, 63))  # Отрисовка заголовка меню новой игры
 
             for i, button in enumerate(self.new_game_menu_buttons):
                 button.draw(self.app.screen, self.menu_button_x, 160 + 96 * i)  # Отрисовка кнопок меню новой игры
@@ -303,7 +284,7 @@ class Leaderboard:
     def __init__(self, application):
         self.app = application
 
-        self.width, self.height = 576, 640
+        self.width, self.height = 1088, 640
 
         if pygame.display.get_window_size() != (self.width, self.height):  # Размер окна не соответствует требуемому
             pygame.display.quit()
@@ -311,8 +292,17 @@ class Leaderboard:
             pygame.display.set_caption('Игра "Трубопровод"')
             pygame.display.set_icon(pygame.image.load('assets/icon.png'))
 
-        print('Таблица рекордов:')
-        print(self.app.scores)
+        self.leaderboard_bg = pygame.image.load('assets/leaderboard_bg.png').convert_alpha()
+        self.first_page_button = pygame.image.load('assets/first_page_button.png').convert_alpha()
+        self.previous_page_button = pygame.image.load('assets/previous_page_button.png').convert_alpha()
+        self.next_page_button = pygame.image.load('assets/next_page_button.png').convert_alpha()
+        self.last_page_button = pygame.image.load('assets/last_page_button.png').convert_alpha()
+        self.back_button = pygame.image.load('assets/back_button.png').convert_alpha()
+
+        self.sorted_scores = sorted(self.app.scores.items(), key=lambda item: item[1]['score'], reverse=True)
+
+        self.last_page = (len(self.sorted_scores) - 1) // 7 + 1 if len(self.sorted_scores) > 0 else 1
+        self.page = 1
 
     def event_handler(self, event):
         """
@@ -320,12 +310,28 @@ class Leaderboard:
         """
         if event.type == pygame.MOUSEBUTTONDOWN:
             x, y = pygame.mouse.get_pos()
-            if event.button == 1:
+            if 0 <= x <= 64 and 0 <= y <= 64 and event.button == 1:  # Нажатие ЛКМ по кнопке возврата в меню
                 self.app.state = MainMenu(self.app)
+            elif 64 <= x <= 128 and 576 <= y <= 640 and event.button == 1:  # Нажатие ЛКМ по кнопке первой страницы
+                self.page = 1
+            elif 128 <= x <= 192 and 576 <= y <= 640 and event.button == 1:  # Нажатие ЛКМ по кнопке предыдущей страницы
+                self.page = max(self.page - 1, 1)
+            elif 896 <= x <= 960 and 576 <= y <= 640 and event.button == 1:  # Нажатие ЛКМ по кнопке следующей страницы
+                self.page = min(self.page + 1, self.last_page)
+            elif 960 <= x <= 1024 and 576 <= y <= 640 and event.button == 1:  # Нажатие ЛКМ по кнопке последней страницы
+                self.page = self.last_page
 
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.app.state = MainMenu(self.app)
+            elif event.key == pygame.K_HOME:
+                self.page = 1
+            elif event.key == pygame.K_LEFT:
+                self.page = max(self.page - 1, 1)
+            elif event.key == pygame.K_RIGHT:
+                self.page = min(self.page + 1, self.last_page)
+            elif event.key == pygame.K_END:
+                self.page = self.last_page
 
     def loop(self):
         """
@@ -339,8 +345,56 @@ class Leaderboard:
         """
         self.app.screen.fill('white')  # Заливка экрана белым цветом, чтобы избавиться от прошлого кадра
 
+        self.app.screen.blit(self.leaderboard_bg, (64, 0))  # Отрисовка фона таблицы рекордов
+
         title_text = self.app.font_45.render('Таблица рекордов', True, 'black')
-        self.app.screen.blit(title_text, ((self.width - title_text.get_width()) // 2, -1))
+        self.app.screen.blit(title_text, ((self.width - title_text.get_width()) // 2, -1))  # Отрисовка названия таблицы
+
+        # Отрисовка названий столбцов
+        number_title = self.app.font_32.render('№', True, 'black')
+        self.app.screen.blit(number_title, ((64 - number_title.get_width()) // 2 + 64, 72))
+        name_title = self.app.font_32.render('Имя', True, 'black')
+        self.app.screen.blit(name_title, ((320 - name_title.get_width()) // 2 + 128, 72))
+        score_title = self.app.font_32.render('Счёт', True, 'black')
+        self.app.screen.blit(score_title, ((192 - score_title.get_width()) // 2 + 448, 72))
+        size_title = self.app.font_32.render('Поле', True, 'black')
+        self.app.screen.blit(size_title, ((128 - size_title.get_width()) // 2 + 640, 72))
+        time_title = self.app.font_32.render('Время', True, 'black')
+        self.app.screen.blit(time_title, ((128 - time_title.get_width()) // 2 + 768, 72))
+        turns_title = self.app.font_32.render('Ходы', True, 'black')
+        self.app.screen.blit(turns_title, ((128 - turns_title.get_width()) // 2 + 896, 72))
+
+        for i in range(7 * self.page - 7, min(7 * self.page, len(self.sorted_scores))):
+            name = self.sorted_scores[i][0]
+            score = self.sorted_scores[i][1]['score']
+            size = self.sorted_scores[i][1]['size']
+            time = self.sorted_scores[i][1]['time']
+            turns = self.sorted_scores[i][1]['turns']
+
+            # Отрисовка данных о рекордах
+            number_text = self.app.font_32.render(f'{i + 1}', True, 'black')
+            self.app.screen.blit(number_text, ((64 - number_text.get_width()) // 2 + 64, 136 + 64 * (i % 7)))
+            name_text = self.app.font_32.render(f'{name}', True, 'black')
+            self.app.screen.blit(name_text, ((320 - name_text.get_width()) // 2 + 128, 136 + 64 * (i % 7)))
+            score_text = self.app.font_32.render(f'{score}', True, 'black')
+            self.app.screen.blit(score_text, ((192 - score_text.get_width()) // 2 + 448, 136 + 64 * (i % 7)))
+            size_text = self.app.font_32.render(f'{size}', True, 'black')
+            self.app.screen.blit(size_text, ((128 - size_text.get_width()) // 2 + 640, 136 + 64 * (i % 7)))
+            time_text = self.app.font_32.render(f'{time}', True, 'black')
+            self.app.screen.blit(time_text, ((128 - time_text.get_width()) // 2 + 768, 136 + 64 * (i % 7)))
+            turns_text = self.app.font_32.render(f'{turns}', True, 'black')
+            self.app.screen.blit(turns_text, ((128 - turns_text.get_width()) // 2 + 896, 136 + 64 * (i % 7)))
+
+        self.app.screen.blit(self.first_page_button, (72, 584))  # Отрисовка кнопки первой страницы
+        self.app.screen.blit(self.previous_page_button, (136, 584))  # Отрисовка кнопки предыдущей страницы
+
+        page_text = self.app.font_32.render(f'Страница {self.page} из {self.last_page}', True, 'black')
+        self.app.screen.blit(page_text, ((self.width - page_text.get_width()) // 2, 584))  # Отрисовка номера страницы
+
+        self.app.screen.blit(self.next_page_button, (904, 584))  # Отрисовка кнопки следующей страницы
+        self.app.screen.blit(self.last_page_button, (968, 584))  # Отрисовка кнопки последней страницы
+
+        self.app.screen.blit(self.back_button, (8, 8))  # Отрисовка кнопки возврата в меню
 
         pygame.display.flip()  # Отображение изменений на экране
 
@@ -596,7 +650,7 @@ class Game:
         """
         self.app.screen.fill('white')  # Заливка экрана белым цветом, чтобы избавиться от прошлого кадра
 
-        self.app.screen.blit(self.pause_button, (16, 16))  # Отрисовка кнопки паузы
+        self.app.screen.blit(self.pause_button, (8, 8))  # Отрисовка кнопки паузы
 
         time_text = self.app.font_45.render(f'{self.time // 3600:02}:{self.time // 60 % 60:02}', True, 'black')
         time_x = (self.width - time_text.get_width()) // 2
