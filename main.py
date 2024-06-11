@@ -207,7 +207,6 @@ class MainMenu:
             if not self.new_game:  # Обычное состояние главного меню
 
                 if event.key == pygame.K_RETURN:
-                    app.player_name = self.new_game_menu_buttons[0].text.strip()
                     self.new_game = True
 
                 elif event.key == pygame.K_UP:
@@ -228,6 +227,7 @@ class MainMenu:
 
             elif self.new_game:  # Меню новой игры
                 if event.key == pygame.K_RETURN and self.new_game_menu_buttons[1].active:
+                    app.player_name = self.new_game_menu_buttons[0].text.strip()
                     self.app.state = Game(self.app)
                 elif event.key == pygame.K_ESCAPE:
                     self.new_game = False
