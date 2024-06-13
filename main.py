@@ -130,10 +130,10 @@ class TextButton(Button):
         """
         if event.key == pygame.K_BACKSPACE:  # Нажатие Backspace
             self.text = self.text[:-1]
-        elif event.unicode.isalnum() or event.unicode in ' -_.':  # Ввод букв, цифр и некоторых символов
+        elif event.unicode.isalnum() or event.unicode in ' -_':  # Ввод букв, цифр и некоторых символов
             text_width = self.app.font_32.render(self.text + event.unicode, True, 'black').get_width()
             if text_width <= 310:
-                self.text += event.unicode
+                self.text = (self.text + event.unicode).lstrip()
 
 
 class Menu:
