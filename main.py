@@ -29,6 +29,7 @@ class App:
         self.font_32 = pygame.font.Font('assets/fonts/OpenSans-Regular.ttf', 32)
         self.font_45 = pygame.font.Font('assets/fonts/OpenSans-Regular.ttf', 45)
         self.font_64 = pygame.font.Font('assets/fonts/OpenSans-Regular.ttf', 64)
+        self.font_32_italic = pygame.font.Font('assets/fonts/OpenSans-Italic.ttf', 32)
 
         self.clock = pygame.time.Clock()
 
@@ -57,20 +58,20 @@ class App:
 
 
 class Button:
-    def __init__(self, text, active=True):
+    def __init__(self, application, text, active=True):
+        self.app = application
         self.text = text  # Текст кнопки
         self.active = active
-        self.font = pygame.font.Font('assets/fonts/OpenSans-Regular.ttf', 32)
         self.image = pygame.image.load(f'assets/button.png').convert_alpha()
 
-    def draw(self, screen, x, y):
-        screen.blit(self.image, (x, y))  # Отрисовка изображения кнопки
+    def draw(self, x, y):
+        self.app.screen.blit(self.image, (x, y))  # Отрисовка изображения кнопки
 
         # Отрисовка текста кнопки
-        button_text = self.font.render(self.text, True, 'black' if self.active else 'gray')
+        button_text = self.app.font_32.render(self.text, True, 'black' if self.active else 'gray')
         button_text_x = x + ((320 - button_text.get_width()) // 2)
         button_text_y = y + 8
-        screen.blit(button_text, (button_text_x, button_text_y))
+        self.app.screen.blit(button_text, (button_text_x, button_text_y))
 
 
 class GridSizeButton(Button):
@@ -78,18 +79,28 @@ class GridSizeButton(Button):
     Кнопка изменения размера поля
     """
 
-    def __init__(self, text):
-        super().__init__(text)
+    def __init__(self, application, text):
+        super().__init__(application, text)
         self.image = pygame.image.load(f'assets/size_button.png').convert_alpha()
 
-    def draw(self, screen, x, y):
-        screen.blit(self.image, (x, y))  # Отрисовка изображения кнопки
+    def draw(self, x, y):
+        self.app.screen.blit(self.image, (x, y))  # Отрисовка изображения кнопки
 
         # Отрисовка текста кнопки
-        button_text = self.font.render(self.text, True, 'black')
-        button_text_x = x + ((211 - button_text.get_width()) // 2)
+        button_text = self.app.font_32.render(self.text, True, 'black')
+        button_text_x = x + ((210 - button_text.get_width()) // 2)
         button_text_y = y + 8
-        screen.blit(button_text, (button_text_x, button_text_y))
+        self.app.screen.blit(button_text, (button_text_x, button_text_y))
+
+        # Отрисовка количества строк
+        rows_text = self.app.font_32.render(f'{self.app.rows}', True, 'black')
+        rows_x = x + 230 - rows_text.get_width() // 2
+        self.app.screen.blit(rows_text, (rows_x, 232))
+
+        # Отрисовка количества столбцов
+        cols_text = self.app.font_32.render(f'{self.app.cols}', True, 'black')
+        cols_x = x + 298 - cols_text.get_width() // 2
+        self.app.screen.blit(cols_text, (cols_x, 232))
 
 
 class TextButton(Button):
@@ -97,61 +108,75 @@ class TextButton(Button):
     Кнопка с текстовым полем
     """
 
-    def __init__(self, text, hint):
-        super().__init__(text)
+    def __init__(self, application, text, hint):
+        super().__init__(application, text)
         self.hint = hint  # Текст подсказки
-        self.font_italic = pygame.font.Font('assets/fonts/OpenSans-Italic.ttf', 32)
 
-    def draw(self, screen, x, y):
-        screen.blit(self.image, (x, y))  # Отрисовка изображения кнопки
+    def draw(self, x, y):
+        self.app.screen.blit(self.image, (x, y))  # Отрисовка изображения кнопки
 
         # Отрисовка текстового поля
         if not self.text:
-            button_text = self.font_italic.render(self.hint, True, 'gray')
+            button_text = self.app.font_32_italic.render(self.hint, True, 'gray')
         else:
-            button_text = self.font.render(self.text, True, 'black')
+            button_text = self.app.font_32.render(self.text, True, 'black')
         button_text_x = x + ((320 - button_text.get_width()) // 2)
         button_text_y = y + 8
-        screen.blit(button_text, (button_text_x, button_text_y))
+        self.app.screen.blit(button_text, (button_text_x, button_text_y))
 
     def keyboard_input(self, event):
         """
         Обработка ввода с клавиатуры
         """
-        if event.key == pygame.K_BACKSPACE:
+        if event.key == pygame.K_BACKSPACE:  # Нажатие Backspace
             self.text = self.text[:-1]
-        elif event.unicode.isalnum() or event.unicode in ' -_.':
-            text_width = self.font.render(self.text + event.unicode, True, 'black').get_width()
+        elif event.unicode.isalnum() or event.unicode in ' -_.':  # Ввод букв, цифр и некоторых символов
+            text_width = self.app.font_32.render(self.text + event.unicode, True, 'black').get_width()
             if text_width <= 310:
                 self.text += event.unicode
 
 
 class Menu:
-    def __init__(self, title, buttons, bg_image, width, height):
+    def __init__(self, application, title, buttons, bg_image):
+        self.app = application
         self.title = title
         self.buttons = buttons
         self.bg_image = bg_image
-        self.width, self.height = width, height
+
+        self.width, self.height = self.app.screen.get_size()
 
         self.tint = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
         self.tint.fill((0, 0, 0, 128))
 
-        self.font = pygame.font.Font('assets/fonts/OpenSans-Regular.ttf', 45)
-
         self.button_x = (self.width - 320) // 2  # Положение кнопок меню по оси X
 
-    def draw(self, screen):
-        screen.blit(self.tint, (0, 0))  # Затемнение экрана
-        screen.blit(self.bg_image, ((self.width - 384) // 2, 64))  # Отрисовка фона меню
+    def draw(self):
+        self.app.screen.blit(self.tint, (0, 0))  # Затемнение экрана
+        self.app.screen.blit(self.bg_image, ((self.width - 384) // 2, 64))  # Отрисовка фона меню
 
         # Отрисовка заголовка меню
-        title_text = self.font.render(self.title, True, 'black')
+        title_text = self.app.font_45.render(self.title, True, 'black')
         title_x = (self.width - title_text.get_width()) // 2
-        screen.blit(title_text, (title_x, 63))
+        self.app.screen.blit(title_text, (title_x, 63))
 
         # Отрисовка кнопок меню
         for i, button in enumerate(self.buttons):
-            button.draw(screen, self.button_x, 160 + 96 * i)
+            button.draw(self.button_x, 160 + 96 * i)
+
+
+def change_size(value, min_value, max_value, button_x, x, y, mouse_button):
+    """
+    Изменение размера поля
+    """
+    if button_x <= x <= button_x + 43:
+        if 224 <= y <= 240 and mouse_button == 1 or mouse_button == 4:  # Клик по "▲" или колесо мыши вверх
+            return min(value + 1, max_value)
+        elif 272 <= y <= 288 and mouse_button == 1 or mouse_button == 5:  # Клик по "▼" или колесо мыши вниз
+            return max(value - 1, min_value)
+        else:
+            return value
+    else:
+        return value
 
 
 class MainMenu:
@@ -172,20 +197,19 @@ class MainMenu:
         self.menu_button_x = (self.width - 320) // 2  # Положение кнопок меню по оси X
 
         self.main_menu_buttons = [
-            Button('Новая игра'),
-            GridSizeButton('Размер поля'),
-            Button('Таблица рекордов'),
-            Button('Выйти из игры')
+            Button(self.app, 'Новая игра'),
+            GridSizeButton(self.app, 'Размер поля'),
+            Button(self.app, 'Таблица рекордов'),
+            Button(self.app, 'Выйти из игры')
         ]
 
         self.new_game_menu_buttons = [
-            TextButton(self.app.player_name, 'Введите имя'),
-            Button('Начать игру', bool(self.app.player_name)),
-            Button('Вернуться в меню')
+            TextButton(self.app, self.app.player_name, 'Введите имя'),
+            Button(self.app, 'Начать игру', bool(self.app.player_name)),
+            Button(self.app, 'Вернуться в меню')
         ]
         self.new_game_menu_bg = pygame.image.load('assets/new_game_menu_bg.png').convert_alpha()
-        self.new_game_menu = Menu('Новая игра', self.new_game_menu_buttons, self.new_game_menu_bg,
-                                  self.width, self.height)
+        self.new_game_menu = Menu(self.app, 'Новая игра', self.new_game_menu_buttons, self.new_game_menu_bg)
 
     def event_handler(self, event):
         """
@@ -194,84 +218,71 @@ class MainMenu:
         if event.type == pygame.MOUSEBUTTONDOWN:
             x, y = pygame.mouse.get_pos()
 
+            # Обычное состояние главного меню
             if self.menu_button_x <= x <= self.menu_button_x + 320 and not self.new_game:
-                # Обычное состояние главного меню
 
-                if 128 <= y <= 192 and event.button == 1:  # Нажатие ЛКМ по кнопке "Новая игра"
+                if 128 <= y <= 192 and event.button == 1:  # Клик по "Новая игра"
                     self.new_game = True
 
-                elif self.menu_button_x + 209 <= x <= self.menu_button_x + 252 and 224 <= y <= 240:
-                    if event.button == 1:  # Нажатие ЛКМ по кнопке "▲"
-                        self.app.rows = min(self.app.rows + 1, self.app.max_rows)
-                    elif event.button == 3:  # Нажатие ПКМ по кнопке "▲"
-                        self.app.rows = min(self.app.rows + 5, self.app.max_rows)
+                elif 224 <= y <= 288:  # "Размер поля"
+                    self.app.rows = change_size(self.app.rows, self.app.min_rows, self.app.max_rows,
+                                                self.menu_button_x + 209, x, y, event.button)
+                    self.app.cols = change_size(self.app.cols, self.app.min_cols, self.app.max_cols,
+                                                self.menu_button_x + 277, x, y, event.button)
 
-                elif self.menu_button_x + 209 <= x <= self.menu_button_x + 252 and 272 <= y <= 288:
-                    if event.button == 1:  # Нажатие ЛКМ по кнопке "▼"
-                        self.app.rows = max(self.app.rows - 1, self.app.min_rows)
-                    elif event.button == 3:  # Нажатие ПКМ по кнопке "▼"
-                        self.app.rows = max(self.app.rows - 5, self.app.min_rows)
-
-                elif self.menu_button_x + 277 <= x <= self.menu_button_x + 320 and 224 <= y <= 240:
-                    if event.button == 1:  # Нажатие ЛКМ по кнопке "▲"
-                        self.app.cols = min(self.app.cols + 1, self.app.max_cols)
-                    elif event.button == 3:  # Нажатие ПКМ по кнопке "▲"
-                        self.app.cols = min(self.app.cols + 5, self.app.max_cols)
-
-                elif self.menu_button_x + 277 <= x <= self.menu_button_x + 320 and 272 <= y <= 288:
-                    if event.button == 1:  # Нажатие ЛКМ по кнопке "▼"
-                        self.app.cols = max(self.app.cols - 1, self.app.min_cols)
-                    elif event.button == 3:  # Нажатие ПКМ по кнопке "▼"
-                        self.app.cols = max(self.app.cols - 5, self.app.min_cols)
-
-                elif 320 <= y <= 384 and event.button == 1:  # Нажатие ЛКМ по кнопке "Таблица рекордов"
+                elif 320 <= y <= 384 and event.button == 1:  # Клик по "Таблица рекордов"
                     self.app.state = Leaderboard(self.app)
 
-                elif 416 <= y <= 480 and event.button == 1:  # Нажатие ЛКМ по кнопке "Выйти из игры"
+                elif 416 <= y <= 480 and event.button == 1:  # Клик по "Выйти из игры"
                     self.app.running = False
 
+            # Меню новой игры
             elif self.menu_button_x <= x <= self.menu_button_x + 320 and self.new_game and event.button == 1:
-                #  Меню новой игры
-                if 256 <= y <= 320 and self.new_game_menu_buttons[1].active:  # Нажатие ЛКМ по кнопке "Начать игру"
+                if 256 <= y <= 320 and self.new_game_menu_buttons[1].active:  # Клик по "Начать игру"
                     app.player_name = self.new_game_menu_buttons[0].text.strip()
                     self.app.state = Game(self.app)
-                elif 352 <= y <= 416:  # Нажатие ЛКМ по кнопке "Вернуться в меню"
+                elif 352 <= y <= 416:  # Клик по "Вернуться в меню"
                     self.new_game = False
                     self.new_game_menu_buttons[0].text = self.app.player_name
                     self.new_game_menu_buttons[1].active = bool(self.app.player_name)
 
         elif event.type == pygame.KEYDOWN:
 
-            if not self.new_game:  # Обычное состояние главного меню
+            # Обычное состояние главного меню
+            if not self.new_game:
 
-                if event.key == pygame.K_RETURN:
+                if event.key == pygame.K_RETURN:  # Нажатие Enter
                     self.new_game = True
 
-                elif event.key == pygame.K_UP:
+                elif event.key == pygame.K_UP:  # Нажатие стрелки вверх
                     self.app.rows = min(self.app.rows + 1, self.app.max_rows)
-                elif event.key == pygame.K_DOWN:
+                elif event.key == pygame.K_DOWN:  # Нажатие стрелки вниз
                     self.app.rows = max(self.app.rows - 1, self.app.min_rows)
 
-                elif event.key == pygame.K_RIGHT:
+                elif event.key == pygame.K_RIGHT:  # Нажатие стрелки вправо
                     self.app.cols = min(self.app.cols + 1, self.app.max_cols)
-                elif event.key == pygame.K_LEFT:
+                elif event.key == pygame.K_LEFT:  # Нажатие стрелки влево
                     self.app.cols = max(self.app.cols - 1, self.app.min_cols)
 
-                elif event.key == pygame.K_TAB:
+                elif event.key == pygame.K_TAB:  # Нажатие Tab
                     self.app.state = Leaderboard(self.app)
 
-                elif event.key == pygame.K_ESCAPE:
+                elif event.key == pygame.K_ESCAPE:  # Нажатие Escape
                     self.app.running = False
 
-            elif self.new_game:  # Меню новой игры
-                if event.key == pygame.K_RETURN and self.new_game_menu_buttons[1].active:
+            # Меню новой игры
+            elif self.new_game:
+
+                if event.key == pygame.K_RETURN and self.new_game_menu_buttons[1].active:  # Нажатие Enter
                     app.player_name = self.new_game_menu_buttons[0].text.strip()
                     self.app.state = Game(self.app)
-                elif event.key == pygame.K_ESCAPE:
+
+                elif event.key == pygame.K_ESCAPE:  # Нажатие Escape
                     self.new_game = False
                     self.new_game_menu_buttons[0].text = self.app.player_name
                     self.new_game_menu_buttons[1].active = bool(self.app.player_name)
-                else:
+
+                else:  # Обработка ввода с клавиатуры
                     self.new_game_menu_buttons[0].keyboard_input(event)
                     if not self.new_game_menu_buttons[0].text.strip() and self.new_game_menu_buttons[1].active:
                         self.new_game_menu_buttons[1].active = False
@@ -290,22 +301,17 @@ class MainMenu:
         """
         self.app.screen.fill('white')  # Заливка экрана белым цветом, чтобы избавиться от прошлого кадра
 
+        # Отрисовка названия игры
         title_text = self.app.font_64.render('Трубопровод', True, 'black')
-        self.app.screen.blit(title_text, ((self.width - title_text.get_width()) // 2, 8))  # Отрисовка названия игры
+        self.app.screen.blit(title_text, ((self.width - title_text.get_width()) // 2, 8))
 
+        # Отрисовка кнопок главного меню
         for i, button in enumerate(self.main_menu_buttons):
-            button.draw(self.app.screen, self.menu_button_x, 128 + 96 * i)  # Отрисовка кнопок
+            button.draw(self.menu_button_x, 128 + 96 * i)
 
-        rows_text = self.app.font_32.render(f'{self.app.rows}', True, 'black')
-        rows_x = self.menu_button_x + 230 - rows_text.get_width() // 2
-        self.app.screen.blit(rows_text, (rows_x, 232))  # Отрисовка числа строк
-
-        cols_text = self.app.font_32.render(f'{self.app.cols}', True, 'black')
-        cols_x = self.menu_button_x + 298 - cols_text.get_width() // 2
-        self.app.screen.blit(cols_text, (cols_x, 232))  # Отрисовка числа столбцов
-
+        # Отрисовка меню новой игры
         if self.new_game:
-            self.new_game_menu.draw(self.app.screen)  # Отрисовка меню новой игры
+            self.new_game_menu.draw()
 
         pygame.display.flip()  # Отображение изменений на экране
 
@@ -344,27 +350,36 @@ class Leaderboard:
         """
         if event.type == pygame.MOUSEBUTTONDOWN:
             x, y = pygame.mouse.get_pos()
-            if 0 <= x <= 64 and 0 <= y <= 64 and event.button == 1:  # Нажатие ЛКМ по кнопке возврата в меню
+
+            if 0 <= x <= 64 and 0 <= y <= 64 and event.button == 1:  # Клик по кнопке возврата в меню
                 self.app.state = MainMenu(self.app)
-            elif 64 <= x <= 128 and 576 <= y <= 640 and event.button == 1:  # Нажатие ЛКМ по кнопке первой страницы
-                self.page = 1
-            elif 128 <= x <= 192 and 576 <= y <= 640 and event.button == 1:  # Нажатие ЛКМ по кнопке предыдущей страницы
+
+            elif 64 <= x <= 1024 and 128 <= y <= 576 and event.button == 4:  # Прокрутка колеса мыши вверх
                 self.page = max(self.page - 1, 1)
-            elif 896 <= x <= 960 and 576 <= y <= 640 and event.button == 1:  # Нажатие ЛКМ по кнопке следующей страницы
+            elif 64 <= x <= 1024 and 128 <= y <= 576 and event.button == 5:  # Прокрутка колеса мыши вниз
                 self.page = min(self.page + 1, self.last_page)
-            elif 960 <= x <= 1024 and 576 <= y <= 640 and event.button == 1:  # Нажатие ЛКМ по кнопке последней страницы
+
+            elif 64 <= x <= 128 and 576 <= y <= 640 and event.button == 1:  # Клик по кнопке первой страницы
+                self.page = 1
+            elif 128 <= x <= 192 and 576 <= y <= 640 and event.button == 1:  # Клик по кнопке предыдущей страницы
+                self.page = max(self.page - 1, 1)
+            elif 896 <= x <= 960 and 576 <= y <= 640 and event.button == 1:  # Клик по кнопке следующей страницы
+                self.page = min(self.page + 1, self.last_page)
+            elif 960 <= x <= 1024 and 576 <= y <= 640 and event.button == 1:  # Клик по кнопке последней страницы
                 self.page = self.last_page
 
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
+
+            if event.key == pygame.K_ESCAPE:  # Нажатие Escape
                 self.app.state = MainMenu(self.app)
-            elif event.key == pygame.K_HOME:
+
+            elif event.key == pygame.K_HOME:  # Нажатие Home
                 self.page = 1
-            elif event.key == pygame.K_LEFT:
+            elif event.key == pygame.K_LEFT:  # Нажатие стрелки влево
                 self.page = max(self.page - 1, 1)
-            elif event.key == pygame.K_RIGHT:
+            elif event.key == pygame.K_RIGHT:  # Нажатие стрелки вправо
                 self.page = min(self.page + 1, self.last_page)
-            elif event.key == pygame.K_END:
+            elif event.key == pygame.K_END:  # Нажатие End
                 self.page = self.last_page
 
     def loop(self):
@@ -544,15 +559,15 @@ class Game:
 
         self.pause_button = pygame.image.load('assets/pause_button.png').convert_alpha()
         self.pause_menu_buttons = [
-            Button('Продолжить'),
-            Button('Выйти в меню')
+            Button(self.app, 'Продолжить'),
+            Button(self.app, 'Выйти в меню')
         ]
         self.pause_menu_bg = pygame.image.load('assets/pause_menu_bg.png').convert_alpha()
-        self.pause_menu = Menu('Пауза', self.pause_menu_buttons, self.pause_menu_bg, self.width, self.height)
+        self.pause_menu = Menu(self.app, 'Пауза', self.pause_menu_buttons, self.pause_menu_bg)
 
         self.win_menu_buttons = [
-            Button('Играть ещё раз'),
-            Button('Выйти в меню')
+            Button(self.app, 'Играть ещё раз'),
+            Button(self.app, 'Выйти в меню')
         ]
         self.win_menu_bg = pygame.image.load('assets/win_menu_bg.png').convert_alpha()
 
@@ -561,62 +576,6 @@ class Game:
         self.score = 0
 
         self.check_win()
-
-    def event_handler(self, event):
-        """
-        Обработка событий
-        """
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            x, y = pygame.mouse.get_pos()
-
-            if (self.grid_x <= x <= self.grid_x + self.grid_width and self.grid_y <= y <= self.grid_y + self.grid_height
-                    and not self.pause and not self.win):  # Курсор находится в пределах поля
-                tile_x, tile_y = (x - self.grid_x) // self.scale, (y - self.grid_y) // self.scale
-
-                if event.button == 1:  # Левая клавиша мыши
-                    _ = self.tiles[tile_y][tile_x] - 90  # Поворот фишки на 90 градусов по часовой стрелке
-                    self.turns += 1
-                    self.check_win()
-
-                elif event.button == 3:  # Правая клавиша мыши
-                    _ = self.tiles[tile_y][tile_x] + 90  # Поворот фишки на 90 градусов против часовой стрелки
-                    self.turns += 1
-                    self.check_win()
-
-            elif 0 <= x <= 64 and 0 <= y <= 64 and event.button == 1 and not self.pause and not self.win:
-                # Нажатие ЛКМ по кнопке паузы
-                self.pause = True
-
-            elif self.menu_button_x <= x <= self.menu_button_x + 320 and event.button == 1:
-                if self.pause:  # Меню паузы
-                    if 160 <= y <= 224:  # Нажатие ЛКМ по кнопке "Продолжить"
-                        self.pause = False
-                    elif 256 <= y <= 320:  # Нажатие ЛКМ по кнопке "Выйти в меню"
-                        self.app.state = MainMenu(self.app)
-
-                elif self.win:  # Меню победы
-                    if 224 <= y <= 288:  # Нажатие ЛКМ по кнопке "Играть ещё раз"
-                        self.app.state = Game(self.app)
-                    elif 320 <= y <= 384:  # Нажатие ЛКМ по кнопке "Выйти в меню"
-                        self.app.state = MainMenu(self.app)
-
-        elif event.type == pygame.KEYDOWN:
-
-            if not self.pause and not self.win:  # Обычное состояние игрового процесса
-                if event.key == pygame.K_ESCAPE:
-                    self.pause = True
-
-            elif self.pause:  # Меню паузы
-                if event.key == pygame.K_RETURN:
-                    self.pause = False
-                if event.key == pygame.K_ESCAPE:
-                    self.app.state = MainMenu(self.app)
-
-            elif self.win:  # Меню победы
-                if event.key == pygame.K_RETURN:
-                    self.app.state = Game(self.app)
-                if event.key == pygame.K_ESCAPE:
-                    self.app.state = MainMenu(self.app)
 
     def check_win(self):
         """
@@ -674,6 +633,69 @@ class Game:
                                                                          f'{self.time // 60 % 60:02}',
                                                                  'turns': self.turns}
 
+    def event_handler(self, event):
+        """
+        Обработка событий
+        """
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            x, y = pygame.mouse.get_pos()
+
+            # Обычное состояние игрового процесса
+            if (self.grid_x <= x <= self.grid_x + self.grid_width and self.grid_y <= y <= self.grid_y + self.grid_height
+                    and not self.pause and not self.win):  # Курсор находится в пределах поля
+                tile_x, tile_y = (x - self.grid_x) // self.scale, (y - self.grid_y) // self.scale
+
+                if event.button == 1:  # Левая клавиша мыши
+                    _ = self.tiles[tile_y][tile_x] - 90  # Поворот фишки на 90 градусов по часовой стрелке
+                    self.turns += 1
+                    self.check_win()
+
+                elif event.button == 3:  # Правая клавиша мыши
+                    _ = self.tiles[tile_y][tile_x] + 90  # Поворот фишки на 90 градусов против часовой стрелки
+                    self.turns += 1
+                    self.check_win()
+
+            elif 0 <= x <= 64 and 0 <= y <= 64 and event.button == 1 and not self.pause and not self.win:
+                # Клик по кнопке паузы
+                self.pause = True
+
+            elif self.menu_button_x <= x <= self.menu_button_x + 320 and event.button == 1:
+
+                # Меню паузы
+                if self.pause:
+                    if 160 <= y <= 224:  # Клик по "Продолжить"
+                        self.pause = False
+                    elif 256 <= y <= 320:  # Клик по "Выйти в меню"
+                        self.app.state = MainMenu(self.app)
+
+                # Меню победы
+                elif self.win:
+                    if 224 <= y <= 288:  # Клик по "Играть ещё раз"
+                        self.app.state = Game(self.app)
+                    elif 320 <= y <= 384:  # Клик по "Выйти в меню"
+                        self.app.state = MainMenu(self.app)
+
+        elif event.type == pygame.KEYDOWN:
+
+            # Обычное состояние игрового процесса
+            if not self.pause and not self.win:
+                if event.key == pygame.K_ESCAPE:  # Нажатие Escape
+                    self.pause = True
+
+            # Меню паузы
+            elif self.pause:
+                if event.key == pygame.K_RETURN:  # Нажатие Enter
+                    self.pause = False
+                if event.key == pygame.K_ESCAPE:  # Нажатие Escape
+                    self.app.state = MainMenu(self.app)
+
+            # Меню победы
+            elif self.win:
+                if event.key == pygame.K_RETURN:  # Нажатие Enter
+                    self.app.state = Game(self.app)
+                if event.key == pygame.K_ESCAPE:  # Нажатие Escape
+                    self.app.state = MainMenu(self.app)
+
     def loop(self):
         """
         Цикл игрового процесса
@@ -716,10 +738,12 @@ class Game:
                 self.water_images[pipe], self.tiles[tile_y][tile_x].angle), (self.scale, self.scale))
             self.app.screen.blit(scaled_water, (x, y))
 
-        if self.pause:  # Меню паузы
-            self.pause_menu.draw(self.app.screen)
+        # Отрисовка меню паузы
+        if self.pause:
+            self.pause_menu.draw()
 
-        if self.win:  # Меню победы
+        # Отрисовка меню победы
+        if self.win:
             self.app.screen.blit(self.menu_tint, (0, 0))  # Отрисовка затемнения экрана
             self.app.screen.blit(self.win_menu_bg, ((self.width - 384) // 2, 64))  # Отрисовка фона меню победы
 
@@ -735,7 +759,7 @@ class Game:
 
             # Отрисовка кнопок меню победы
             for i, button in enumerate(self.win_menu_buttons):
-                button.draw(self.app.screen, self.menu_button_x, 224 + 96 * i)
+                button.draw(self.menu_button_x, 224 + 96 * i)
 
         pygame.display.flip()  # Отображение изменений на экране
 
