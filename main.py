@@ -5,6 +5,10 @@ from random import choice
 
 
 class App:
+    """
+    Класс приложения
+    """
+
     def __init__(self):
         self.running = True
 
@@ -58,6 +62,10 @@ class App:
 
 
 class Button:
+    """
+    Кнопка
+    """
+
     def __init__(self, application, text, active=True):
         self.app = application
         self.text = text  # Текст кнопки
@@ -137,6 +145,10 @@ class TextButton(Button):
 
 
 class Menu:
+    """
+    Меню
+    """
+
     def __init__(self, application, title, buttons, bg_image):
         self.app = application
         self.title = title
@@ -449,6 +461,10 @@ class Leaderboard:
 
 
 class Tile:
+    """
+    Фишка
+    """
+
     def __init__(self, pipe, angle):
         self.pipe = pipe  # Тип трубы
         self.angle = angle  # Угол поворота фишки
