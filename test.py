@@ -3,6 +3,10 @@ from main import change_size
 
 
 class TestChangeSize(unittest.TestCase):
+    """
+    Тестирование функции change_size
+    """
+
     def test_change_size(self):
         # Проверка увеличения размера
         self.assertEqual(change_size(12, 9, 18, 0, 24, 232, 1), 13)
