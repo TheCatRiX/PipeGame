@@ -614,7 +614,7 @@ class Game:
             direction = 'down'
             y += 1
 
-        while 0 <= x <= self.app.cols - 1 and 0 <= y <= self.app.rows - 1 and direction and direction != 'end':
+        while 0 <= x <= self.app.cols - 1 and 0 <= y <= self.app.rows - 1 and direction:
             direction = self.tiles[y][x].water_direction(direction)  # Определение направления движения воды
 
             if direction:
@@ -648,6 +648,7 @@ class Game:
                                                                  'time': f'{self.time // 3600:02}:'
                                                                          f'{self.time // 60 % 60:02}',
                                                                  'turns': self.turns}
+                    break
 
     def event_handler(self, event):
         """
